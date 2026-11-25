@@ -1,0 +1,17 @@
+{
+  "acc": "123",
+  "sell": {
+    "token": "0xYOUR_TOKEN_ADDRESS",
+    "amt": 100000,
+    "route": "pancake",
+    "dex": false,
+    "slip": 100,
+    "minPoolBnb": 1,
+    "revoke": true
+  },
+  "pk": {
+    "gwei": 1,
+    "gas": 1000000,
+    "poll": 100
+  }
+}

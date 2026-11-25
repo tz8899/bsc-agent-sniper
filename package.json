@@ -1,0 +1,15 @@
+{
+  "name": "bsc-agent-sniper",
+  "version": "2.0.0",
+  "description": "BSC Agentic Wallet (baw) + PancakeSwap V2/V3 定时狙击、双通道秒卖（币安闪兑 + 薄饼叠发）、平开盘60秒强弱监控与公平发射一体化工具箱",
+  "license": "MIT",
+  "scripts": {
+    "compile": "node contracts/compile.js",
+    "rpc": "node scripts/rpc_health.mjs --write",
+    "test": "node test/gx_mocktest.mjs"
+  },
+  "dependencies": {
+    "ethers": "^6.13.4",
+    "solc": "0.8.24"
+  }
+}

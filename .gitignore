@@ -1,0 +1,28 @@
+# 私钥与个人配置（严禁提交）
+config/pk.json
+config/wallets.json
+config/rpc_live.json
+config/rpc_live.json.*
+config/cfg.*.local.json
+*.key
+*.pem
+.env
+.env.*
+
+# 钱包目录与会话状态
+baw/
+baw*/
+.baw/
+*_wallets/
+vault/
+
+# 运行时产物与日志
+build/
+logs/
+sig/
+.bawlib/
+scripts/.bawlib/
+node_modules/
+*.log
+*.jsonl
+*results.json
