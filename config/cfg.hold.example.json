@@ -1,0 +1,52 @@
+{
+  "name": "example_flat_open",
+  "acc": "123",
+  "token": "0x0000000000000000000000000000000000000000",
+  "sale": "0x0000000000000000000000000000000000000000",
+  "pair": null,
+  "expectedTokensPerWallet": 100000000,
+  "costPerWalletBnb": 0.03,
+  "sellTaxPct": 3,
+  "slippagePct": 15,
+  "preApproveFlash": true,
+  "maxHours": 12,
+  "refBind": {
+    "to": null,
+    "referrer": null,
+    "abi": "function bindReferrer(address)",
+    "fn": "bindReferrer",
+    "checkAbi": "function referrerOf(address) view returns (address)",
+    "checkFn": "referrerOf"
+  },
+  "entryMode": "heat",
+  "heat": {
+    "startTs": 1795650000,
+    "windowSec": 60,
+    "thresholdPct": 60,
+    "totalShares": 10000,
+    "progressAbi": "function sharesSold() view returns (uint256)",
+    "progressFn": "sharesSold"
+  },
+  "mint": {
+    "valueBnb": "0.03",
+    "calldata": "0x00000000"
+  },
+  "claim": {
+    "to": null,
+    "calldata": null
+  },
+  "claimRef": {
+    "to": null,
+    "calldata": null
+  },
+  "exitMode": "manual",
+  "conditional": {
+    "tpRules": [
+      { "atX": 1.5, "sellPct": 67, "label": "1.5x出本" },
+      { "atX": 2.0, "sellPct": 50, "label": "2.0x出一半留利润飞" }
+    ],
+    "targetMcUsd": 0,
+    "stallExit": { "afterSec": 300, "minX": 1.15 },
+    "stopX": 0
+  }
+}

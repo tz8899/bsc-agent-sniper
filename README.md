@@ -2,7 +2,7 @@
 
 一套面向 **BNB Smart Chain (BSC)** 的链上自动化打新、双通道秒卖、平开盘实时强弱监控与公平发射一体化工具箱。
 
-> 本仓库基于开源项目 [`lyl0709/Py`](https://github.com/lyl0709/Py)（MIT License）的核心秒卖引擎（`gx.mjs`、`bawworker.mjs`、`BS.sol`、`BS3.sol`、`report.mjs`）扩展而来，新增了**平开盘 60 秒实时强弱评分与自动止盈/止损/右侧追多引擎 `flat_watch.mjs`** 及**免费抢 + 限期进度付费冲锋 + 免费仓隔离平盘策略模板 `fairlaunch_master.mjs`**。
+> 本仓库基于开源项目 [`lyl0709/Py`](https://github.com/lyl0709/Py)（MIT License）的核心秒卖引擎（`gx.mjs`、`bawworker.mjs`、`BS.sol`、`BS3.sol`、`report.mjs`）扩展而来，新增了**平开盘不秒卖标准 4 步闭环引擎 `hold_engine.mjs`**、**60 秒实时强弱评分与右侧追多引擎 `flat_watch.mjs`** 及**免费抢 + 限期进度付费冲锋模板 `fairlaunch_master.mjs`**。
 
 ---
 
@@ -15,9 +15,10 @@
 │   ├── BS3.sol                       # PancakeSwap V2 + V3 多钱包原子代卖合约
 │   ├── compile.js / deploy.js        # solc 0.8.24 编译与 CREATE2 确定性部署脚本
 ├── scripts/
-│   ├── gx.mjs                        # 主力热进程：定时/进度触发 + 盘前双预授权 + 币安闪兑/薄饼叠发双通道秒卖 + 池子核对 + 自动撤权 + 块级战报
-│   ├── flat_watch.mjs                # 平开盘链上监控引擎：60s 强弱打分 + 大单/净流入告警 + 平盘打法一(分批止盈/走弱止损) + 打法二(右侧追多)
-│   ├── fairlaunch_master.mjs         # 一体化模板：免费 EIP-712 抢领（绝不自动卖）+ 限期达标付费满打 + 开盘自动 claimTokens + 平盘不秒卖
+│   ├── gx.mjs                        # 模板 A（开盘秒卖）：定时/进度触发 + 盘前双预授权 + 币安闪兑/薄饼叠发双通道秒卖 + 块级战报
+│   ├── hold_engine.mjs               # 模板 B（平开盘不秒卖 4 步闭环）：只授 V2R+FLASH 不授 BS2 + 绑返佣 + 热度/口令进场 + 纯听口令3秒清仓/条件单自动出 + 自动撤权总账
+│   ├── flat_watch.mjs                # 平开盘链上监控引擎：60s 强弱打分 + 大单/净流入告警 + 平盘打法一/打法二(右侧追多)
+│   ├── fairlaunch_master.mjs         # 一体化模板：免费 EIP-712 抢领（绝不自动卖）+ 限期达标付费满打 + 开盘自动 claimTokens
 │   ├── bawworker.mjs                 # 常驻 Binance Agentic Wallet (baw) 子进程（复用连接降延迟）
 │   ├── bs_sell.js / bs3_sell.js      # 独立触发 BS / BS3 批量代卖
 │   ├── pkw_sell.js                   # 独立私钥钱包秒卖（可选开盘块+1 避税门控）
@@ -31,6 +32,7 @@
 │   ├── wallets.example.json          # 多钱包映射模板（复制为 wallets.json 后填写）
 │   ├── pk.example.json               # 私钥配置模板（复制为 pk.json 后填写）
 │   ├── cfg.timed_sell.example.json   # gx.mjs 定时 + 进度达标触发 + 开盘双通道秒卖示例
+│   ├── cfg.hold.example.json         # hold_engine.mjs 平开盘不秒卖 4 步闭环配置模板
 │   ├── cfg.fairlaunch.example.json   # fairlaunch_master.mjs 配置模板
 │   ├── cfg.sell_bs.example.json      # V2 + BS 批量代卖示例
 │   ├── cfg.bs3_v3.example.json       # V3 + BS3 批量代卖示例
@@ -63,9 +65,9 @@ npm run rpc
 npm test
 ```
 
-### 2. 三种主力打法用法
+### 2. 四种主力打法用法
 
-#### 场景 A：溢价开盘 —— 定时/进度触发 + 双通道开盘秒卖（`gx.mjs`）
+#### 场景 A：开盘秒卖 / 抢跑型 —— 定时/进度触发 + 双通道秒卖（`gx.mjs`）
 复制 `config/cfg.timed_sell.example.json` 为 `config/cfg.myproject.local.json` 并填入已审计的合约与选择器：
 
 ```bash
@@ -76,7 +78,34 @@ node scripts/gx.mjs config/cfg.myproject.local.json --sim
 node scripts/gx.mjs config/cfg.myproject.local.json 2>&1 | tee logs/myproject.log
 ```
 
-#### 场景 B：平开盘（1.0x）—— 60 秒实时强弱打分监控 / 打法一 / 打法二（`flat_watch.mjs`）
+#### 场景 B：平开盘不秒卖 —— 标准 4 步闭环引擎（`hold_engine.mjs` · 推荐）
+专为「不盲目秒卖、看盘面/按条件吃大肉」的项目设计，完整落地 4 步闭环：
+1. **只授 DEX，不授私钥 BS2 + 盘前绑返佣**：提前给 1–N 号做好精确 `V2R + FLASH` 双授权，绝不授 `BS2/BS3`（根绝开盘第 1 秒盲砸与风控 `351803`），同时 2–N 号盘前自动绑 1 号吃返佣压低成本，常驻预热 `bawworker`。
+2. **确认热度才进（双入口）**：支持 `entryMode: "heat"`（开打 1 分钟纯链上过 60%/75% 自动全号打满，未达标自动撤权退出）或 `entryMode: "manual"`（预热待命，尾盘喊一声写入 `BUY_NOW` 10 秒并发打满）。
+3. **开盘后绝不盲卖（两种模式任选）**：开池自动第一时间领币/领返佣，实时汇报池子 BNB、净流入、现价倍数与估算市值：
+   - **默认 · 纯听口令（`exitMode: "manual"`）**：绝不擅自卖单；喊一声清仓写入 `SELL_ALL`（或 `SELL_PCT 50`），预热进程 **3 秒内并发通过 V2R 砸光**。
+   - **可选 · 条件单自动出（`exitMode: "conditional"`）**：支持「分批出本留利润飞（如 `1.5x` 卖 67% 出本 + `2.0x` 再出一半）」、「按号分层止盈」、「目标市值全清（`targetMcUsd`）」、「开盘超 5 分钟不拉自动全清（`stallExit`）」，中途随时可用 `SELL_ALL` 强清。
+4. **卖完自动清零授权 + 实收盈亏总账**：清仓上链或放弃退出前自动把全部号的 `V2R` 与 `FLASH` 授权撤回 `0`，并落盘实收盈亏总账 `logs/<name>.report.json`。
+
+```bash
+# 离线单测
+node scripts/hold_engine.mjs --self-test
+
+# 复制模板并演练
+cp config/cfg.hold.example.json config/cfg.myproject.hold.local.json
+node scripts/hold_engine.mjs --config config/cfg.myproject.hold.local.json --dry-run
+
+# 正式后台值守
+node scripts/hold_engine.mjs --config config/cfg.myproject.hold.local.json 2>&1 | tee logs/myproject_hold.log
+
+# 运行时口令控制（250ms 级响应）
+echo "BUY_NOW"  > logs/myproject.cmd    # 尾盘一键并发打满
+echo "SELL_ALL" > logs/myproject.cmd    # 3 秒内全号并发通过 V2R 清仓并自动撤权
+echo "SELL_PCT 50" > logs/myproject.cmd # 全号各减仓一半
+echo "ABORT"    > logs/myproject.cmd    # 放弃退出并清零所有 V2R / FLASH 授权
+```
+
+#### 场景 C：平开盘 60 秒实时强弱打分监控 / 右侧追多（`flat_watch.mjs`）
 默认纯监控打分告警（不发单）；只有显式传 `--arm` 才会执行链上交易：
 
 ```bash
@@ -92,7 +121,7 @@ node scripts/flat_watch.mjs --token 0x代币地址 --mode play2 --wallets pkw \
   --buy-bnb 0.05 --min-big-buyers 2 --revoke-after --arm
 ```
 
-#### 场景 C：免费 EIP-712 抢领 + 限期达标付费满打 + 平盘不秒卖（`fairlaunch_master.mjs`）
+#### 场景 D：免费 EIP-712 抢领 + 限期达标付费满打 + 平盘不秒卖（`fairlaunch_master.mjs`）
 适合同时存在免费券额度与付费预售、且希望**免费份额保留手动处理、仅对付费仓自动执行平盘监控策略**的项目：
 
 ```bash

@@ -1,7 +1,7 @@
 {
   "name": "bsc-agent-sniper",
-  "version": "2.0.0",
-  "description": "BSC Agentic Wallet (baw) + PancakeSwap V2/V3 定时狙击、双通道秒卖（币安闪兑 + 薄饼叠发）、平开盘60秒强弱监控与公平发射一体化工具箱",
+  "version": "2.1.0",
+  "description": "BSC Agentic Wallet (baw) + PancakeSwap V2/V3 定时狙击、双通道秒卖（gx.mjs）、平开盘不秒卖 4 步闭环（hold_engine.mjs）、60秒强弱监控与公平发射一体化工具箱",
   "license": "MIT",
   "scripts": {
     "compile": "node contracts/compile.js",
